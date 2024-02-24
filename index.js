@@ -1,9 +1,9 @@
 const express = require("express");
 const { requestHandler } = require("./helpers/handleRequest");
-require("dotenv").config();
+const environmentToExport = require("./helpers/environment");
 
 const app = express();
-const port = process.env.PORT;
+const port = environmentToExport.port;
 
 // Middleware for parsing application/json
 app.use(express.json());
