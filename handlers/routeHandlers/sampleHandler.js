@@ -1,9 +1,11 @@
 const express = require("express");
+const { sendResponse } = require("../../helpers/handleResponse");
 const sampleRouter = express.Router();
 
 sampleRouter.get("/", (req, res) => {
-  console.dir(req.query);
-  res.send("Sample Route");
+  sendResponse(res, 202, {
+    message: "This is sample route",
+  });
 });
 
 sampleRouter.post("/", (req, res) => {

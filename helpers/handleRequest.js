@@ -1,7 +1,7 @@
 const notFoundRouter = require("../handlers/routeHandlers/notFoundHandler");
 const routes = require("../routes");
 
-const handleReqRes = (app) => {
+const requestHandler = (app) => {
   Object.keys(routes).forEach((path) => {
     app.use(`/${path}`, routes[path]);
   });
@@ -10,4 +10,4 @@ const handleReqRes = (app) => {
   app.use("*", notFoundRouter);
 };
 
-module.exports = handleReqRes;
+module.exports = { requestHandler };
