@@ -21,4 +21,41 @@ const createDatabase = async (fileName, data) => {
   }
 };
 
-module.exports = { createDatabase };
+// read the database
+// const readDatabase = async (fileName) => {
+//   try {
+//     return await new Promise((resolve, reject) => {
+//       databaseFile.readCallback("test-db", fileName, (err, data) => {
+//         if (err) {
+//           console.log("error while creating db", err);
+//           reject(err);
+//         } else {
+//           resolve(data);
+//         }
+//       });
+//     });
+//   } catch (error) {
+//     console.error(err);
+//     throw err;
+//   }
+// };
+
+const readDatabase = async (fileName) => {
+  try {
+    return await new Promise((resolve, reject) => {
+      databaseFile.readAsync("test-db", fileName, (err, data) => {
+        if (err) {
+          console.log("error while creating db", err);
+          reject(err);
+        } else {
+          resolve(data);
+        }
+      });
+    });
+  } catch (error) {
+    console.error(err);
+    throw err;
+  }
+};
+
+module.exports = { createDatabase, readDatabase };

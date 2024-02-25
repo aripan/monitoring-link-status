@@ -1,12 +1,25 @@
 const express = require("express");
 const { sendResponse } = require("../../helpers/handleResponse");
-const { createDatabase } = require("../../helpers/database");
+const { createDatabase, readDatabase } = require("../../helpers/database");
 const dbRouter = express.Router();
 
-dbRouter.get("/", (req, res) => {
-  sendResponse(res, 202, {
-    message: "This is db route",
-  });
+dbRouter.get("/", async (req, res) => {
+  const { fileName } = req.query;
+  try {
+    const data = await readDatabase(fileName);
+    console.log("🚀 ~ dbRouter.get ~ data:", data);
+    sendResponse(res, 200, {
+      message: data,
+    });
+  } catch (error) {
+    // Log and handle errors
+    console.error("Error creating database:", error);
+
+    // Send error response to the client
+    sendResponse(res, 500, {
+      error: "Internal Server Error",
+    });
+  }
 });
 
 dbRouter.post("/", async (req, res) => {
