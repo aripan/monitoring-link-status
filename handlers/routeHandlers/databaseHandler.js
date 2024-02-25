@@ -4,6 +4,7 @@ const {
   createDatabase,
   readDatabase,
   updateDatabase,
+  deleteDatabase,
 } = require("../../helpers/database");
 const dbRouter = express.Router();
 
@@ -31,9 +32,6 @@ dbRouter.post("/", async (req, res) => {
     // Attempt to create the database
     await createDatabase(fileName, data);
 
-    // Log success message
-    console.log("Database created successfully");
-
     // Send success response to the client
     sendResponse(res, 201, {
       message: "Database has been created",
@@ -55,6 +53,17 @@ dbRouter.put("/", async (req, res) => {
     await updateDatabase(fileName, data);
     sendResponse(res, 200, { message: "data updated successfully" });
   } catch (err) {
+    sendResponse(res, 400, { message: err });
+  }
+});
+
+dbRouter.delete("/", async (req, res) => {
+  const { fileName } = req.body;
+  try {
+    await deleteDatabase(fileName);
+    sendResponse(res, 204, { message: "data deleted successfully" });
+  } catch (err) {
+    console.log("🚀 ~ dbRouter.delete ~ err:", err);
     sendResponse(res, 400, { message: err });
   }
 });

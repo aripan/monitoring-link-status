@@ -9,12 +9,10 @@ const createDatabase = async (fileName, data) => {
           console.log("error while creating db", err);
           reject(err);
         } else {
-          console.log("Database created successfully");
           resolve();
         }
       });
     });
-    console.log("Database creation process completed.");
   } catch (err) {
     console.error(err);
     throw err; // Re-throw the error to handle it in the caller if necessary
@@ -92,4 +90,43 @@ const updateDatabase = async (fileName, data) => {
   }
 };
 
-module.exports = { createDatabase, readDatabase, updateDatabase };
+// const deleteDatabase = async (fileName) => {
+//   try {
+//     return await new Promise((resolve, reject) => {
+//       databaseFile.deleteCallback("test-db", fileName, (err) => {
+//         if (!err) {
+//           resolve();
+//         } else {
+//           console.log("🚀 ~ databaseFile.deleteCallback ~ err:", err);
+//           reject(err);
+//         }
+//       });
+//     });
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
+const deleteDatabase = async (fileName) => {
+  try {
+    return await new Promise((resolve, reject) => {
+      databaseFile.deleteAsync("test-db", fileName, (err) => {
+        if (!err) {
+          resolve();
+        } else {
+          console.log("🚀 ~ databaseFile.deleteCallback ~ err:", err);
+          reject(err);
+        }
+      });
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports = {
+  createDatabase,
+  readDatabase,
+  updateDatabase,
+  deleteDatabase,
+};
