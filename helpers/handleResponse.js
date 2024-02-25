@@ -1,4 +1,5 @@
 const sendResponse = (res, statusCode, payload) => {
+  // console.log("🚀 ~ sendResponse ~ payload:",statusCode, payload);
   statusCode = typeof statusCode === "number" ? statusCode : 500;
   payload = typeof payload === "object" ? payload : {};
 

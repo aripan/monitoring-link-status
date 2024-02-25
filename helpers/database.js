@@ -58,4 +58,38 @@ const readDatabase = async (fileName) => {
   }
 };
 
-module.exports = { createDatabase, readDatabase };
+// const updateDatabase = async (fileName, data) => {
+//   try {
+//     return await new Promise((resolve, reject) => {
+//       databaseFile.updateCallback("test-db", fileName, data, (err) => {
+//         if (!err) {
+//           resolve();
+//         } else {
+//           console.log("🚀 ~ databaseFile.updateCallback ~ err:", err);
+//           reject(err);
+//         }
+//       });
+//     });
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
+const updateDatabase = async (fileName, data) => {
+  try {
+    return await new Promise((resolve, reject) => {
+      databaseFile.updateAsync("test-db", fileName, data, (err) => {
+        if (!err) {
+          resolve();
+        } else {
+          console.log("🚀 ~ databaseFile.updateCallback ~ err:", err);
+          reject(err);
+        }
+      });
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports = { createDatabase, readDatabase, updateDatabase };

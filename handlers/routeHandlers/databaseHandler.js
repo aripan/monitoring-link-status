@@ -1,13 +1,16 @@
 const express = require("express");
 const { sendResponse } = require("../../helpers/handleResponse");
-const { createDatabase, readDatabase } = require("../../helpers/database");
+const {
+  createDatabase,
+  readDatabase,
+  updateDatabase,
+} = require("../../helpers/database");
 const dbRouter = express.Router();
 
 dbRouter.get("/", async (req, res) => {
   const { fileName } = req.query;
   try {
     const data = await readDatabase(fileName);
-    console.log("🚀 ~ dbRouter.get ~ data:", data);
     sendResponse(res, 200, {
       message: data,
     });
@@ -43,6 +46,16 @@ dbRouter.post("/", async (req, res) => {
     sendResponse(res, 500, {
       error: "Internal Server Error",
     });
+  }
+});
+
+dbRouter.put("/", async (req, res) => {
+  const { fileName, data } = req.body;
+  try {
+    await updateDatabase(fileName, data);
+    sendResponse(res, 200, { message: "data updated successfully" });
+  } catch (err) {
+    sendResponse(res, 400, { message: err });
   }
 });
 
