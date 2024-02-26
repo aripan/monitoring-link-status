@@ -6,8 +6,15 @@ const sendResponse = (res, statusCode, payload) => {
   // stringify the payload
   const payloadString = JSON.stringify(payload);
 
-  res.writeHead(statusCode);
-  res.end(payloadString);
+  //@ one way to format the response
+  // res.format({
+  //   json() {
+  //     res.status(statusCode).end(payloadString);
+  //   },
+  // });
+
+  //@ another way to format the response
+  res.type("application/json").status(statusCode).end(payloadString);
 };
 
 module.exports = { sendResponse };

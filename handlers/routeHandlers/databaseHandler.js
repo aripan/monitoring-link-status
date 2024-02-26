@@ -27,6 +27,7 @@ dbRouter.get("/", async (req, res) => {
 });
 
 dbRouter.post("/", async (req, res) => {
+  console.log("🚀 ~ dbRouter.post ~ req:", req.method);
   const { fileName, data } = req.body;
   try {
     // Attempt to create the database
