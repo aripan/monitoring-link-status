@@ -1,12 +1,15 @@
+require("dotenv").config();
 const environments = {};
 
 environments.staging = {
-  port: 3000,
+  port: process.env.STAGING_PORT,
+  secret: process.env.STAGING_SECRET_KEY,
   envName: "staging",
 };
 
 environments.production = {
-  port: 5000,
+  port: process.env.PRODUCTION_PORT,
+  secret: process.env.PRODUCTION_SECRET_KEY,
   envName: "production",
 };
 

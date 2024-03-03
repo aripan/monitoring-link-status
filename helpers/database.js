@@ -38,23 +38,24 @@ const createDatabase = async (fileName, data) => {
 //   }
 // };
 
-const readDatabase = async (fileName) => {
-  try {
-    return await new Promise((resolve, reject) => {
-      databaseFile.readAsync("test-db", fileName, (err, data) => {
-        if (err) {
-          console.log("error while creating db", err);
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      });
-    });
-  } catch (error) {
-    console.error(err);
-    throw err;
-  }
-};
+// const readDatabase = async (fileName) => {
+//   try {
+//     return await new Promise((resolve, reject) => {
+//       databaseFile.readAsync("test-db", fileName, (err, data) => {
+//         if (err) {
+//           console.log("error while creating db", err);
+//           reject(err);
+//         } else {
+//           resolve(data);
+//         }
+//       });
+//     });
+//   } catch (error) {
+//     console.error(err);
+//     throw err;
+//   }
+// };
+
 
 // const updateDatabase = async (fileName, data) => {
 //   try {
@@ -121,6 +122,26 @@ const deleteDatabase = async (fileName) => {
     });
   } catch (error) {
     throw error;
+  }
+};
+
+
+//! use in router path
+const readDatabase = async (customDir, fileName) => {
+  try {
+    return await new Promise((resolve, reject) => {
+      databaseFile.readAsync(customDir, fileName, (err, data) => {
+        if (err) {
+          console.log("error while creating db", err);
+          reject(err);
+        } else {
+          resolve(data);
+        }
+      });
+    });
+  } catch (error) {
+    console.error(err);
+    throw err;
   }
 };
 
