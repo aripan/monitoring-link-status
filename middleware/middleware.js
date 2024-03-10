@@ -17,11 +17,16 @@ const ensureJSON = (dataType) => {
   return null; // Indicates no error
 };
 
-const typeAndLengthCheck = (expectedData, expectedType) => {
-  if (typeof expectedData === expectedType && expectedData.length > 0) {
-    return true;
+const restrictions = (req, res, next) => {
+  const methodError = checkMethod(req.method);
+  const jsonError = ensureJSON(req.get("Content-Type"));
+  if (methodError) {
+    return res.status(405).send({ message: methodError.error });
   }
-  return false;
+  if (jsonError) {
+    return res.status(400).send({ message: jsonError.error });
+  }
+  next();
 };
 
-module.exports = { checkMethod, ensureJSON, typeAndLengthCheck };
+module.exports = { restrictions };

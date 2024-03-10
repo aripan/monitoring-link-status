@@ -1,100 +1,39 @@
-const express = require('express');
-const fs = require('fs');
-const app = express();
-const PORT = 3000;
+const crypto = require('crypto');
 
-app.use(express.json());
+// Generate a random encryption key
+const generateEncryptionKey = () => {
+  return crypto.randomBytes(32).toString('hex'); // 32 bytes (256 bits) for AES-256 encryption
+};
 
-// CRUD operations
+// Example usage:
+const encryptionKey = generateEncryptionKey();
+console.log(encryptionKey);
 
-// Read operation - Get all data
-app.get('/data', (req, res) => {
-  fs.readFile('data.json', 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send('Internal Server Error');
-      return;
-    }
-    res.json(JSON.parse(data));
-  });
-});
 
-// Create operation - Add new data
-app.post('/data', (req, res) => {
-  const newData = req.body;
-  fs.readFile('data.json', 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send('Internal Server Error');
-      return;
-    }
-    const jsonData = JSON.parse(data);
-    jsonData.push(newData);
-    fs.writeFile('data.json', JSON.stringify(jsonData, null, 2), (err) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send('Internal Server Error');
-        return;
-      }
-      res.status(201).send('Data added successfully');
-    });
-  });
-});
+const createEncryptedToken = (tokenPayload, encryptionKey, expiresIn = '7d') => {
+  // Specify the algorithm and encryption key for encryption
+  const options = {
+    algorithm: 'dir', // Direct encryption with a symmetric key
+    expiresIn,
+    header: {
+      typ: 'JWT', // Type of token
+      enc: 'A256GCM', // Encryption algorithm (AES-256-GCM)
+    },
+  };
 
-// Update operation - Update existing data
-app.put('/data/:id', (req, res) => {
-  const { id } = req.params;
-  const updatedData = req.body;
-  fs.readFile('data.json', 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send('Internal Server Error');
-      return;
-    }
-    const jsonData = JSON.parse(data);
-    const dataIndex = jsonData.findIndex(item => item.id === parseInt(id));
-    if (dataIndex === -1) {
-      res.status(404).send('Data not found');
-      return;
-    }
-    jsonData[dataIndex] = updatedData;
-    fs.writeFile('data.json', JSON.stringify(jsonData, null, 2), (err) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send('Internal Server Error');
-        return;
-      }
-      res.send('Data updated successfully');
-    });
-  });
-});
+  // Create the encrypted token
+  const token = jwt.sign(tokenPayload, encryptionKey, options);
 
-// Delete operation - Delete data
-app.delete('/data/:id', (req, res) => {
-  const { id } = req.params;
-  fs.readFile('data.json', 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send('Internal Server Error');
-      return;
-    }
-    const jsonData = JSON.parse(data);
-    const newData = jsonData.filter(item => item.id !== parseInt(id));
-    if (newData.length === jsonData.length) {
-      res.status(404).send('Data not found');
-      return;
-    }
-    fs.writeFile('data.json', JSON.stringify(newData, null, 2), (err) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send('Internal Server Error');
-        return;
-      }
-      res.send('Data deleted successfully');
-    });
-  });
-});
+  return token;
+};
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Example usage:
+const tokenPayload = {
+  firstName: 'Katy',
+  lastName: 'Parry',
+  email: 'katy@parry.com',
+};
+
+const encryptionKey = 'your_encryption_key'; // Replace with your own encryption key
+const encryptedToken = createEncryptedToken(tokenPayload, encryptionKey);
+console.log(encryptedToken);

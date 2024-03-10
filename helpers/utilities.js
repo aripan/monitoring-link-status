@@ -19,13 +19,21 @@ const comparePassword = (password, hashedPassword) => {
     password.length > 0 &&
     hashedPassword.length > 0
   ) {
-    return bcrypt.compareSync(myPlaintextPassword, hash);
+    return bcrypt.compareSync(password, hashedPassword);
   }
 
+  return false;
+};
+
+const typeAndLengthCheck = (expectedData, expectedType) => {
+  if (typeof expectedData === expectedType && expectedData.length > 0) {
+    return true;
+  }
   return false;
 };
 
 module.exports = {
   hashedPassword,
   comparePassword,
+  typeAndLengthCheck,
 };

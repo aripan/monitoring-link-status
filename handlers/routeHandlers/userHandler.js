@@ -1,63 +1,26 @@
 const express = require("express");
-const { sendResponse } = require("../../helpers/handleResponse");
-const {
-  checkMethod,
-  ensureJSON,
-  typeAndLengthCheck,
-} = require("../../middleware/middleware");
+const { restrictions } = require("../../middleware/middleware");
 const crudLib = require("../../lib/crudData");
-const { hashedPassword } = require("../../helpers/utilities");
+const {
+  hashedPassword,
+  comparePassword,
+  typeAndLengthCheck,
+} = require("../../helpers/utilities");
+const {
+  createEncodedToken,
+  verifyEncodedToken,
+} = require("../../helpers/customTokens/encodedToken");
 const userRouter = express.Router();
 
-// Middleware to restrict HTTP methods
-const restrictions = (req, res, next) => {
-  const methodError = checkMethod(req.method);
-  const jsonError = ensureJSON(req.get("Content-Type"));
-  if (methodError) {
-    return sendResponse(res, 405, methodError);
-  }
-  if (jsonError) {
-    return sendResponse(res, 400, jsonError);
-  }
-  next();
-};
-
+// middleware to apply few restrictions
 userRouter.use(restrictions);
 
-//@ get all users
-userRouter.get("/", async (req, res) => {
-  try {
-    const { status, data } = await crudLib.readData("test-db", "new-data");
-    if (status !== 200) return res.status(400).send({ message });
-    data.length > 0
-      ? res.status(status).send({ data })
-      : res.status(404).send({ message: "Not found" });
-  } catch (error) {
-    res.status(400).send({ message: "There is a problem in your request" });
-  }
-});
-
-//@ get user using email address
-userRouter.get("/:email", async (req, res) => {
-  try {
-    const userEmail = req.params.email;
-    const { status, data } = await crudLib.readData("test-db", "new-data");
-
-    if (status !== 200) return res.status(400).send({ message });
-
-    const user = data.find((user) => user.email === userEmail);
-
-    user
-      ? res.status(status).send({ data: user })
-      : res.status(404).send({ message: "user not found" });
-  } catch (error) {
-    res.status(400).send({ message: "There is a problem in your request" });
-  }
-});
-
-// @ add new user
-userRouter.post("/", async (req, res) => {
-  const { firstName, lastName, email, password, tosAgreement } = req.body;
+/*
+@ Public API
+@ User sign up
+*/
+userRouter.post("/signup", async (req, res) => {
+  const { firstName, lastName, email, password } = req.body;
 
   const isFirstNameValid = typeAndLengthCheck(firstName, "string");
   const isLastNameValid = typeAndLengthCheck(lastName, "string");
@@ -72,8 +35,7 @@ userRouter.post("/", async (req, res) => {
     firstName &&
     lastName &&
     email &&
-    password &&
-    tosAgreement
+    password
   ) {
     try {
       const securedPassword = hashedPassword(password);
@@ -85,11 +47,31 @@ userRouter.post("/", async (req, res) => {
           lastName,
           email,
           password: securedPassword,
-          tosAgreement,
         }
       );
 
-      res.status(status).send({ message });
+      if (status !== 201) return res.status(status).send({ message });
+
+      // create the encoded token
+      const tokenPayload = {
+        firstName,
+        lastName,
+        email,
+      };
+
+      const createdToken = createEncodedToken(tokenPayload, "10min");
+
+      if (!createdToken)
+        return res.status(500).send({ message: "Internal error" });
+
+      // store the token in cookies
+      res.cookie("accessToken", createdToken, {
+        httpOnly: true,
+        maxAge: 900000,
+        signed: true,
+      });
+
+      res.status(status).send({ message: "User signed up successfully" });
     } catch (error) {
       res.status(400).send({ message: "There is a problem in your request" });
     }
@@ -100,10 +82,90 @@ userRouter.post("/", async (req, res) => {
   }
 });
 
-//@ update user data
-userRouter.put("/", async (req, res) => {
+/*
+@Public API
+@ User sign in using email and password
+*/
+userRouter.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const { status, data } = await crudLib.readData("test-db", "new-data");
+
+    if (status !== 200) return res.status(400).send({ message });
+
+    const user = data.find((user) => user.email === email);
+
+    if (!user) return res.status(404).send({ message: "user not found" });
+
+    // compare password
+    const isPasswordValid = comparePassword(password, user.password);
+    if (!isPasswordValid)
+      return res.status(401).send({ message: "Unauthorized" });
+
+    // create the encoded token
+    const tokenPayload = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    };
+
+    const createdToken = createEncodedToken(tokenPayload, "10min");
+
+    if (!createdToken)
+      return res.status(500).send({ message: "Internal error" });
+
+    // store the token in cookies
+    res.cookie("accessToken", createdToken, {
+      httpOnly: true,
+      maxAge: 900000,
+      signed: true,
+    });
+
+    res.status(status).send({ message: "User signed in successfully" });
+  } catch (error) {
+    res.status(400).send({ message: "There is a problem in your request" });
+  }
+});
+
+/*
+@ Private API
+@ User sign out
+*/
+userRouter.delete("/logout", verifyEncodedToken, async (req, res) => {
+  try {
+    if (req.signedCookies["accessToken"]) {
+      res.clearCookie("accessToken");
+      res.status(204).send({ message: "User signed out successfully" });
+    } else {
+      res.status(400).send({ message: "Bad request" });
+    }
+  } catch (error) {
+    res.status(400).send({ message: "There is a problem in your request" });
+  }
+});
+
+/*
+@ Private API
+@ User update
+*/
+userRouter.put("/:email", verifyEncodedToken, async (req, res) => {
+  const userEmail = req.params.email;
+  const { email } = req.user;
+
+  // check if the requested user is valid or not
+  if (email !== userEmail)
+    return res.status(401).send({ message: "User is not allowed!!!" });
+
+  // check if user wants to update the password also
   const { password } = req.body;
   let updateFields = {};
+
+  // Check if email is included in req.body
+  if ("email" in req.body) {
+    return res.status(400).json({ error: "Email cannot be updated" });
+  }
+
+  // incase of password needs to be updated => hash the password
   if (password) {
     const securedPassword = hashedPassword(password);
     updateFields = {
@@ -115,10 +177,12 @@ userRouter.put("/", async (req, res) => {
       ...req.body,
     };
   }
+
   try {
     const { status, message } = await crudLib.updateData(
       "test-db",
       "new-data",
+      userEmail,
       updateFields
     );
 
@@ -132,19 +196,51 @@ userRouter.put("/", async (req, res) => {
   }
 });
 
-//@ delete user data
-userRouter.delete("/:email", async (req, res) => {
+/*
+@ Private API
+@ User - get user using email address
+*/
+userRouter.get("/:email", verifyEncodedToken, async (req, res) => {
   try {
     const userEmail = req.params.email;
-    const { status, message } = await crudLib.deleteData(
-      "test-db",
-      "new-data",
-      userEmail
-    );
+    const { firstName, lastName, email } = req.user;
 
-    if (status !== 204) return res.status(400).send({ message });
+    // check if the requested user is valid or not
+    if (email !== userEmail)
+      return res.status(401).send({ message: "User is not allowed!!!" });
 
-    res.status(status).send({ message });
+    return res.status(200).send({ user: { firstName, lastName, email } });
+
+    //! previously getting the data from database, but later on it seems that user is already present in the header
+
+    // const { status, data } = await crudLib.readData("test-db", "new-data");
+
+    // if (status !== 200) return res.status(400).send({ message });
+
+    // const user = data.find((user) => user.email === userEmail);
+
+    // user
+    //   ? res.status(status).send({
+    //       user: {
+    //         firstName: user.firstName,
+    //         lastName: user.lastName,
+    //         email: user.email,
+    //       },
+    //     })
+    //   : res.status(404).send({ message: "user not found" });
+  } catch (error) {
+    res.status(400).send({ message: "There is a problem in your request" });
+  }
+});
+
+//@ get all users
+userRouter.get("/", async (req, res) => {
+  try {
+    const { status, data } = await crudLib.readData("test-db", "new-data");
+    if (status !== 200) return res.status(400).send({ message });
+    data.length > 0
+      ? res.status(status).send({ data })
+      : res.status(404).send({ message: "Not found" });
   } catch (error) {
     res.status(400).send({ message: "There is a problem in your request" });
   }
