@@ -9,6 +9,7 @@ const {
 const {
   createEncodedToken,
   verifyEncodedToken,
+  createEncodedRefreshToken,
 } = require("../../helpers/customTokens/encodedToken");
 const userRouter = express.Router();
 
@@ -52,22 +53,44 @@ userRouter.post("/signup", async (req, res) => {
 
       if (status !== 201) return res.status(status).send({ message });
 
-      // create the encoded token
       const tokenPayload = {
         firstName,
         lastName,
         email,
       };
 
-      const createdToken = createEncodedToken(tokenPayload, "10min");
+      const tokenOptions = {
+        expiresIn: "1min",
+        issuer: email,
+        audience: email,
+      };
 
-      if (!createdToken)
+      const refreshTokenOptions = {
+        expiresIn: "7d",
+        issuer: email,
+        audience: email,
+      };
+
+      // create the encoded token
+      const createdToken = createEncodedToken(tokenPayload, tokenOptions);
+
+      // create the encoded refresh token
+      const createdRefreshToken = createEncodedToken(
+        tokenPayload,
+        refreshTokenOptions,
+        "refreshToken"
+      );
+
+      if (!createdToken || !createdRefreshToken)
         return res.status(500).send({ message: "Internal error" });
 
       // store the token in cookies
       res.cookie("accessToken", createdToken, {
         httpOnly: true,
-        maxAge: 900000,
+        signed: true,
+      });
+      res.cookie("refreshToken", createdRefreshToken, {
+        httpOnly: true,
         signed: true,
       });
 
@@ -83,7 +106,7 @@ userRouter.post("/signup", async (req, res) => {
 });
 
 /*
-@Public API
+@ Public API
 @ User sign in using email and password
 */
 userRouter.post("/login", async (req, res) => {
@@ -102,22 +125,44 @@ userRouter.post("/login", async (req, res) => {
     if (!isPasswordValid)
       return res.status(401).send({ message: "Unauthorized" });
 
-    // create the encoded token
     const tokenPayload = {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
     };
 
-    const createdToken = createEncodedToken(tokenPayload, "10min");
+    const tokenOptions = {
+      expiresIn: "1min",
+      issuer: user.email,
+      audience: user.email,
+    };
 
-    if (!createdToken)
+    const refreshTokenOptions = {
+      expiresIn: "7d",
+      issuer: user.email,
+      audience: user.email,
+    };
+
+    // create the encoded token
+    const createdToken = createEncodedToken(tokenPayload, tokenOptions);
+
+    // create the encoded refresh token
+    const createdRefreshToken = createEncodedToken(
+      tokenPayload,
+      refreshTokenOptions,
+      "refreshToken"
+    );
+
+    if (!createdToken || !createdRefreshToken)
       return res.status(500).send({ message: "Internal error" });
 
     // store the token in cookies
     res.cookie("accessToken", createdToken, {
       httpOnly: true,
-      maxAge: 900000,
+      signed: true,
+    });
+    res.cookie("refreshToken", createdRefreshToken, {
+      httpOnly: true,
       signed: true,
     });
 
@@ -132,13 +177,16 @@ userRouter.post("/login", async (req, res) => {
 @ User sign out
 */
 userRouter.delete("/logout", verifyEncodedToken, async (req, res) => {
+  const { accessToken, refreshToken } = req.signedCookies;
+
+  if (!accessToken || !refreshToken) {
+    return res.status(401).send({ message: "Unauthorized: Token is missing" });
+  }
+
   try {
-    if (req.signedCookies["accessToken"]) {
-      res.clearCookie("accessToken");
-      res.status(204).send({ message: "User signed out successfully" });
-    } else {
-      res.status(400).send({ message: "Bad request" });
-    }
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    res.status(204).send({ message: "User signed out successfully" });
   } catch (error) {
     res.status(400).send({ message: "There is a problem in your request" });
   }

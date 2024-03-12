@@ -9,7 +9,8 @@ const port = environmentToExport.port;
 // parsing application/json
 app.use(express.json());
 // parsing cookies
-app.use(cookieParser(environmentToExport.secret));
+app.use(cookieParser(environmentToExport.accessTokenSecret));
+app.use(cookieParser(environmentToExport.refreshTokenSecret));
 
 // Middleware for parsing application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));

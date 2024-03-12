@@ -3,13 +3,15 @@ const environments = {};
 
 environments.staging = {
   port: process.env.STAGING_PORT,
-  secret: process.env.STAGING_SECRET_KEY,
+  accessTokenSecret: process.env.STAGING_ACCESS_TOKEN_SECRET_KEY,
+  refreshTokenSecret: process.env.STAGING_REFRESH_TOKEN_SECRET_KEY,
   envName: "staging",
 };
 
 environments.production = {
   port: process.env.PRODUCTION_PORT,
-  secret: process.env.PRODUCTION_SECRET_KEY,
+  accessTokenSecret: process.env.PRODUCTION_ACCESS_TOKEN_SECRET_KEY,
+  refreshTokenSecret: process.env.PRODUCTION_REFRESH_TOKEN_SECRET_KEY,
   envName: "production",
 };
 
